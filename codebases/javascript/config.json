@@ -1,0 +1,8 @@
+{
+  "language": "javascript",
+  "commands": {
+    "start": ["node", ["app.js"]],
+    "init": ["npm", ["i"]]
+  },
+  "target": "http://localhost:3000"
+}
