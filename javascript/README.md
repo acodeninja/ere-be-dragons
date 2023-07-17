@@ -1,8 +1,10 @@
 # Javascript
 
-## Purpose
+## Vulnerabilities
 
-To test that dynamic audits detect common issues.
+* Remote code execution
+* XSS (Cross-site Scripting)
+* CSRF (Cross-site Request Forgery)
 
 ## Test
 
