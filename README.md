@@ -9,6 +9,6 @@ to test the [continuous-security](https://github.com/acodeninja/continuous-secur
 
 ## Project List
 
-| Language                          | Description              |
-|:----------------------------------|--------------------------|
-| [Javascript](./javascript)        | An ExpressJS application |
+| Language                             | Description              |
+|:-------------------------------------|--------------------------|
+| [Javascript](./codebases/javascript) | An ExpressJS application |
