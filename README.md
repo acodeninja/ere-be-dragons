@@ -6,8 +6,9 @@
 
 ![Close-up view of the dragons on the 1265 Psalter world map](./dragons.jpg)
 
-## List of Applications
+## Project List
 
-| Name                               | Description              |
-|------------------------------------|--------------------------|
-| [Night Fury](./javascript/express) | An ExpressJS application |
+| Language   | Name                                      | Description                            |
+|:-----------|-------------------------------------------|----------------------------------------|
+| Javascript | [ExpressJS](./javascript/express)         | An ExpressJS application               |
+| Javascript | [Dependencies](./javascript/dependencies) | A Project with vulnerable dependencies |
