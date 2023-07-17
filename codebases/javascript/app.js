@@ -59,7 +59,7 @@ const formInputs = [];
 
 app.all('/', (req, res) => {
   if (req.body["words"]) formInputs.push(req.body["words"]);
-  if (req.body["words"].match(/`(?:\\[\s\S]|\${(?:[^{}]|{(?:[^{}]|{[^}]*})*})*}|(?!\${)[^\\`])*`/g))
+  if (req.body["words"]?.match(/`(?:\\[\s\S]|\${(?:[^{}]|{(?:[^{}]|{[^}]*})*})*}|(?!\${)[^\\`])*`/g))
     logger.info('Regex match failed');
 
   res.send(`${formPage}<ul>${formInputs.map(i => `<li>${i}</li>`).join('\n')}</ul>`);
