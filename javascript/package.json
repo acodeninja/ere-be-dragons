@@ -16,5 +16,10 @@
     "express": "^4.18.2",
     "squirrelly": "^8.0.8",
     "winston": "^3.10.0"
+  },
+  "config": {
+    "language": "javascript",
+    "command": "npm start",
+    "target": "http://localhost:3000"
   }
 }
