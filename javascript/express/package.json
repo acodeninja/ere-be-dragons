@@ -12,6 +12,7 @@
   "author": "Lawrence <lawrence@acode.ninja>",
   "license": "MIT",
   "dependencies": {
+    "body-parser": "^1.20.2",
     "express": "^4.18.2",
     "winston": "^3.10.0"
   }
