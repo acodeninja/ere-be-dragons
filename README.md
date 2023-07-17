@@ -8,7 +8,6 @@
 
 ## Project List
 
-| Language   | Name                                      | Description                            |
-|:-----------|-------------------------------------------|----------------------------------------|
-| Javascript | [ExpressJS](./javascript/express)         | An ExpressJS application               |
-| Javascript | [Dependencies](./javascript/dependencies) | A Project with vulnerable dependencies |
+| Language                          | Description              |
+|:----------------------------------|--------------------------|
+| [Javascript](./javascript)        | An ExpressJS application |

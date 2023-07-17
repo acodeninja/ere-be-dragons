@@ -1,4 +1,4 @@
-# Javascript/Express
+# Javascript
 
 ## Purpose
 
@@ -6,11 +6,30 @@ To test that dynamic audits detect common issues.
 
 ## Test
 
+### Audit
+
+Run either `npm audit` or `yarn audit`.
+
+#### Expected Results
+
+```markdown
+squirrelly  <=8.0.8
+Severity: high
+Insecure template handling in Squirrelly - https://github.com/advisories/GHSA-q8j6-pwqx-pm96
+fix available via `npm audit fix --force`
+Will install squirrelly@9.0.0, which is a breaking change
+node_modules/squirrelly
+
+1 high severity vulnerability
+```
+
+### Dynamic
+
 1. Install dependencies `npm install`.
 2. Run the application `npm start`.
 3. Run a [ZAP](https://www.zaproxy.org/) automated scan against `http://localhost:3000`.
 
-## Expected Results (truncated)
+#### Expected Results (truncated)
 
 ```markdown
 # ZAP Scanning Report
