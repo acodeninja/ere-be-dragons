@@ -12,3 +12,4 @@ to test the [continuous-security](https://github.com/acodeninja/continuous-secur
 | Language                             | Description              |
 |:-------------------------------------|--------------------------|
 | [Javascript](./codebases/javascript) | An ExpressJS application |
+| [Python](./codebases/python)         | A Python application     |
