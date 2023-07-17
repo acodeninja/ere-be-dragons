@@ -1,6 +1,16 @@
 const express = require('express');
 const bodyParser = require('body-parser')
 const winston = require('winston');
+const {createHash} = require("crypto");
+
+try {
+  const mod = `test-${Date.now()}`;
+  require(mod);
+} catch (e) {
+
+}
+
+const startTimeHash = createHash("md5").update(new Date().toString()).digest("hex");
 
 const port = process.env["PORT"] || 3000;
 const app = express();
@@ -31,8 +41,7 @@ app.use((req, res, next) => {
   next();
 });
 
-const formPage = `
-<!doctype html>
+const formPage = `<!doctype html>
 <html lang="en">
 <body>
 <a href="/search">Search</a>
@@ -41,6 +50,7 @@ const formPage = `
   <input name="words" id="words" />
   <button type="submit">Submit</button>
 </form>
+${startTimeHash}
 </body>
 </html>
 `;
@@ -49,11 +59,13 @@ const formInputs = [];
 
 app.all('/', (req, res) => {
   if (req.body["words"]) formInputs.push(req.body["words"]);
+  if (req.body["words"].match(/`(?:\\[\s\S]|\${(?:[^{}]|{(?:[^{}]|{[^}]*})*})*}|(?!\${)[^\\`])*`/g))
+    logger.info('Regex match failed');
+
   res.send(`${formPage}<ul>${formInputs.map(i => `<li>${i}</li>`).join('\n')}</ul>`);
 });
 
-const searchPage = `
-<!doctype html>
+const searchPage = `<!doctype html>
 <html lang="en">
 <body>
 <form action="/search">
@@ -61,6 +73,7 @@ const searchPage = `
   <input name="q" id="q" />
   <button type="submit">Submit</button>
 </form>
+${startTimeHash}
 </body>
 </html>
 `;
