@@ -1,5 +1,5 @@
 {
-  "name": "express",
+  "name": "@dragons/javascript-express",
   "version": "1.0.0",
   "description": "An intentionally vulnerable expressjs web application.",
   "main": "app.js",
