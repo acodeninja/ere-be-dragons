@@ -1,6 +1,7 @@
 # 'ere be dragons
 
-'ere be dragons, a collection of badly written vulnerable codebases.
+"'ere be dragons" is a collection of badly written vulnerable codebases. These applications are used 
+to test the [continuous-security](https://github.com/acodeninja/continuous-security) project.
 
 ### It should go without saying, but, *never* use these applications in any environment, ever, at all!
 
