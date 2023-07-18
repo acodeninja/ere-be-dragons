@@ -29,14 +29,16 @@ app.use((req, res, next) => {
   const loggedRequestFields = ['url', 'method', 'httpVersion', 'originalUrl', 'query'];
   const loggedResponseFields = ['statusCode'];
 
-  loggedRequestFields.forEach(f => {
-    loggedObject[f] = req[f];
-  });
-  loggedResponseFields.forEach(f => {
-    loggedObject[f] = req[f];
-  });
+  res.on("finish", function() {
+    loggedRequestFields.forEach(f => {
+      loggedObject[f] = req[f];
+    });
+    loggedResponseFields.forEach(f => {
+      loggedObject[f] = req[f];
+    });
 
-  logger.info(loggedObject);
+    logger.info(loggedObject);
+  });
 
   next();
 });
