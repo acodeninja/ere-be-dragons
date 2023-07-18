@@ -9,8 +9,8 @@ to test the [continuous-security](https://github.com/acodeninja/continuous-secur
 
 ## Project List
 
-| Language                             | Description              |
-|:-------------------------------------|--------------------------|
-| [Javascript](./codebases/javascript) | An ExpressJS application |
-| [Python](./codebases/python)         | A Python application     |
-| [Ruby](./codebases/ruby)             | A Ruby application       |
+| Language                             | Description              | [continuous-security]() report           |
+|:-------------------------------------|--------------------------|:-----------------------------------------|
+| [Javascript](./codebases/javascript) | An ExpressJS application | [link](./codebases/javascript/report.md) |
+| [Python](./codebases/python)         | A Python application     |                                          |
+| [Ruby](./codebases/ruby)             | A Ruby application       |                                          |
