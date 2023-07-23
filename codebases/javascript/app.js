@@ -53,6 +53,7 @@ const formPage = `<!doctype html>
   <button type="submit">Submit</button>
 </form>
 ${startTimeHash}
+%%WORDS%%
 </body>
 </html>
 `;
@@ -64,7 +65,11 @@ app.all('/', (req, res) => {
   if (req.body["words"]?.match(/`(?:\\[\s\S]|\${(?:[^{}]|{(?:[^{}]|{[^}]*})*})*}|(?!\${)[^\\`])*`/g))
     logger.info('Regex match failed');
 
-  res.send(`${formPage}<ul>${formInputs.map(i => `<li>${i}</li>`).join('\n')}</ul>`);
+  res.send(`${formPage.replace('%%WORDS%%', `<ul>${formInputs.map(i => `<li>${i}</li>`).join('\n')}</ul>`)}`);
+
+  if (formInputs.length > 5) while(formInputs.length > 0) {
+    formInputs.pop();
+  }
 });
 
 const searchPage = `<!doctype html>
@@ -76,12 +81,13 @@ const searchPage = `<!doctype html>
   <button type="submit">Submit</button>
 </form>
 ${startTimeHash}
+%%SEARCH%%
 </body>
 </html>
 `;
 
 app.all('/search', (req, res) => {
-  res.send(`${searchPage}<p>You searched for: ${req.query['q']}</p>`);
+  res.send(`${searchPage.replace('%%SEARCH%%', `<p>You searched for: ${req.query['q']}</p>`)}`);
 });
 
 app.listen(port, () => {

@@ -2,8 +2,8 @@
 
 ## Summary
 
-This security report was conducted on 18/07/2023 at 11:43:03 (UTC+1).
-A total of 16 issue(s) were found, 0 of which may require immediate attention.
+This security report was conducted on 23/07/2023 at 11:58:29 (UTC+1).
+A total of 15 issue(s) were found, 0 of which may require immediate attention.
 
 The following technical impacts may arise if an adversary successfully exploits one of the issues found by this scan.
 
@@ -26,7 +26,7 @@ The following technical impacts may arise if an adversary successfully exploits 
 
 This report found issues with the following severities.
 
-**Critical**: 0 | **High** 4 | **Medium** 6 | **Low** 2 | **Informational** 1 | **Unknown** 3
+**Critical**: 0 | **High** 3 | **Medium** 6 | **Low** 2 | **Informational** 1 | **Unknown** 3
 
 To gain a better understanding of the severity levels please see [the appendix](#what-are-severity-levels).
 
@@ -194,7 +194,6 @@ Insecure template handling in Squirrelly
 
 [CVE-2021-32819](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-32819) | [CWE-200](#CWE-200) | [GHSA-q8j6-pwqx-pm96](https://osv.dev/vulnerability/GHSA-q8j6-pwqx-pm96)
 
-
 #### Cross Site Scripting (Reflected) 
 
 **Severity**: [High](#High) | **Type**: web request | **Fix**: Unknown | **Found By**: [@continuous-security/scanner-zed-attack-proxy](https://www.npmjs.com/package/@continuous-security/scanner-zed-attack-proxy)
@@ -206,28 +205,141 @@ There are three types of Cross-site Scripting attacks: non-persistent, persisten
 Non-persistent attacks and DOM-based attacks require a user to either visit a specially crafted link laced with malicious code, or visit a malicious web page containing a web form, which when posted to the vulnerable site, will mount the attack. Using a malicious form will oftentimes take place when the vulnerable resource only accepts HTTP POST requests. In such a case, the form can be submitted automatically, without the victim's knowledge (e.g. by using JavaScript). Upon clicking on the malicious link or submitting the malicious form, the XSS payload will get echoed back and will get interpreted by the user's browser and execute. Another technique to send almost arbitrary requests (GET and POST) is by using an embedded client, such as Adobe Flash.
 Persistent attacks occur when the malicious code is submitted to a web site where it's stored for a period of time. Examples of an attacker's favorite targets often include message board posts, web mail messages, and web chat software. The unsuspecting user is not required to interact with any additional site/link (e.g. an attacker site or a malicious link sent via email), just simply view the web page containing the code.
 
+##### Evidence
+
+The following examples were found in the application.
+
+
+**Example 1**
+
+* **Request**
+    * **Target**: `http://localhost:3000/search?q=%3C%2Fp%3E%3CscrIpt%3Ealert%281%29%3B%3C%2FscRipt%3E%3Cp%3E`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000/search",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000/search" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/search?q=%3C%2Fp%3E%3CscrIpt%3Ealert%281%29%3B%3C%2FscRipt%3E%3Cp%3E"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "280",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:57 GMT",
+        "ETag": "W/\"118-I1kGhUT69g6YqUW/mRojsa7SJT0\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <form action="/search">
+        <label for="q">Search</label>
+        <input name="q" id="q" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <p>You searched for: </p><scrIpt>alert(1);</scRipt><p></p>
+      </body>
+      </html>
+      
+      ```
+
+**Example 2**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "67",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=%3C%2Fli%3E%3CscrIpt%3Ealert%281%29%3B%3C%2FscRipt%3E%3Cli%3E"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=%3C%2Fli%3E%3CscrIpt%3Ealert%281%29%3B%3C%2FscRipt%3E%3Cli%3E' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "459",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:57 GMT",
+        "ETag": "W/\"1cb-SS+rMuGE3OFC8mDEP/zz0CT0XDY\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>"><!--#EXEC cmd="ls /"--><</li>
+      <li><!--#EXEC cmd="dir \"--></li>
+      <li>"><!--#EXEC cmd="dir \"--><</li>
+      <li>0W45pz4p</li>
+      <li></li><scrIpt>alert(1);</scRipt><li></li></ul>
+      </body>
+      </html>
+      
+      ```
 
 ##### References
 
 [CWE-79](#CWE-79)
-
-
-#### Cross Site Scripting (Persistent) 
-
-**Severity**: [High](#High) | **Type**: web request | **Fix**: Unknown | **Found By**: [@continuous-security/scanner-zed-attack-proxy](https://www.npmjs.com/package/@continuous-security/scanner-zed-attack-proxy)
-
-Cross-site Scripting (XSS) is an attack technique that involves echoing attacker-supplied code into a user's browser instance. A browser instance can be a standard web browser client, or a browser object embedded in a software product such as the browser within WinAmp, an RSS reader, or an email client. The code itself is usually written in HTML/JavaScript, but may also extend to VBScript, ActiveX, Java, Flash, or any other browser-supported technology.
-When an attacker gets a user's browser to execute his/they code, the code will run within the security context (or zone) of the hosting web site. With this level of privilege, the code has the ability to read, modify and transmit any sensitive data accessible by the browser. A Cross-site Scripted user could have his/they account hijacked (cookie theft), their browser redirected to another location, or possibly shown fraudulent content delivered by the web site they are visiting. Cross-site Scripting attacks essentially compromise the trust relationship between a user and the web site. Applications utilizing browser object instances which load content from the file system may execute code under the local machine zone allowing for system compromise.
-
-There are three types of Cross-site Scripting attacks: non-persistent, persistent and DOM-based.
-Non-persistent attacks and DOM-based attacks require a user to either visit a specially crafted link laced with malicious code, or visit a malicious web page containing a web form, which when posted to the vulnerable site, will mount the attack. Using a malicious form will oftentimes take place when the vulnerable resource only accepts HTTP POST requests. In such a case, the form can be submitted automatically, without the victim's knowledge (e.g. by using JavaScript). Upon clicking on the malicious link or submitting the malicious form, the XSS payload will get echoed back and will get interpreted by the user's browser and execute. Another technique to send almost arbitrary requests (GET and POST) is by using an embedded client, such as Adobe Flash.
-Persistent attacks occur when the malicious code is submitted to a web site where it's stored for a period of time. Examples of an attacker's favorite targets often include message board posts, web mail messages, and web chat software. The unsuspecting user is not required to interact with any additional site/link (e.g. an attacker site or a malicious link sent via email), just simply view the web page containing the code.
-
-
-##### References
-
-[CWE-79](#CWE-79)
-
 
 #### Cross Site Scripting (DOM Based) 
 
@@ -240,11 +352,156 @@ There are three types of Cross-site Scripting attacks: non-persistent, persisten
 Non-persistent attacks and DOM-based attacks require a user to either visit a specially crafted link laced with malicious code, or visit a malicious web page containing a web form, which when posted to the vulnerable site, will mount the attack. Using a malicious form will oftentimes take place when the vulnerable resource only accepts HTTP POST requests. In such a case, the form can be submitted automatically, without the victim's knowledge (e.g. by using JavaScript). Upon clicking on the malicious link or submitting the malicious form, the XSS payload will get echoed back and will get interpreted by the user's browser and execute. Another technique to send almost arbitrary requests (GET and POST) is by using an embedded client, such as Adobe Flash.
 Persistent attacks occur when the malicious code is submitted to a web site where it's stored for a period of time. Examples of an attacker's favorite targets often include message board posts, web mail messages, and web chat software. The unsuspecting user is not required to interact with any additional site/link (e.g. an attacker site or a malicious link sent via email), just simply view the web page containing the code.
 
+##### Evidence
+
+The following examples were found in the application.
+
+
+**Example 1**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `0`
+    * **Headers**:
+      ```json
+      {}
+      ```
+
+
+**Example 2**
+
+* **Request**
+    * **Target**: `http://localhost:3000/search`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/search"
+      ```
+* **Response**
+    * **Status Code**: `0`
+    * **Headers**:
+      ```json
+      {}
+      ```
+
+
+**Example 3**
+
+* **Request**
+    * **Target**: `http://localhost:3000/search?q=ZAP`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000/search",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000/search" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/search?q=ZAP"
+      ```
+* **Response**
+    * **Status Code**: `0`
+    * **Headers**:
+      ```json
+      {}
+      ```
+
+
+**Example 4**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "9",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=ZAP"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=ZAP' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `0`
+    * **Headers**:
+      ```json
+      {}
+      ```
+
 
 ##### References
 
 [CWE-79](#CWE-79)
-
 
 ### Moderate Severity
 
@@ -254,7 +511,7 @@ Persistent attacks occur when the malicious code is submitted to a web site wher
 
 Unable to follow an import (require, require.resolve) statement/expr.
 
-##### Instances
+##### Evidence
 
 The following examples were found in the application.
 
@@ -274,17 +531,17 @@ The following examples were found in the application.
 
 A RegEx as been detected as unsafe and may be used for a ReDoS Attack.
 
-##### Instances
+##### Evidence
 
 The following examples were found in the application.
 
-`app.js` (starting on line: 64)
+`app.js` (starting on line: 65)
 ```javascript
-62| app.all('/', (req, res) => {
-63|   if (req.body["words"]) formInputs.push(req.body["words"]);
-64|   if (req.body["words"]?.match(/`(?:\\[\s\S]|\${(?:[^{}]|{(?:[^{}]|{[^}]*})*})*}|(?!\${)[^\\`])*`/g))
-65|     logger.info('Regex match failed');
-66| 
+63| app.all('/', (req, res) => {
+64|   if (req.body["words"]) formInputs.push(req.body["words"]);
+65|   if (req.body["words"]?.match(/`(?:\\[\s\S]|\${(?:[^{}]|{(?:[^{}]|{[^}]*})*})*}|(?!\${)[^\\`])*`/g))
+66|     logger.info('Regex match failed');
+67| 
 ```
 
 
@@ -294,11 +551,251 @@ The following examples were found in the application.
 
 The response does not include either Content-Security-Policy with 'frame-ancestors' directive or X-Frame-Options to protect against 'ClickJacking' attacks.
 
+##### Evidence
+
+The following examples were found in the application.
+
+
+**Example 1**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "302",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:55 GMT",
+        "ETag": "W/\"12e-NUd9AXIUhKg/ZrG/vBaRj1swOp4\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 2**
+
+* **Request**
+    * **Target**: `http://localhost:3000/search`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/search"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "256",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:56 GMT",
+        "ETag": "W/\"100-Ez9kQ2LJQmBI+nK7DdgzrICKUBQ\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <form action="/search">
+        <label for="q">Search</label>
+        <input name="q" id="q" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <p>You searched for: undefined</p>
+      </body>
+      </html>
+      
+      ```
+
+**Example 3**
+
+* **Request**
+    * **Target**: `http://localhost:3000/search?q=ZAP`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000/search",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000/search" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/search?q=ZAP"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "250",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:56 GMT",
+        "ETag": "W/\"fa-kPP1kQTdSUEonRkcNJnMUr19j8k\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <form action="/search">
+        <label for="q">Search</label>
+        <input name="q" id="q" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <p>You searched for: ZAP</p>
+      </body>
+      </html>
+      
+      ```
+
+**Example 4**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "9",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=ZAP"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=ZAP' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "315",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:56 GMT",
+        "ETag": "W/\"13b-a8pXFGhzT4FQ2yc6+5Z+5hrwsq0\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
 
 ##### References
 
 [CWE-1021](#CWE-1021)
-
 
 #### Content Security Policy (CSP) Header Not Set 
 
@@ -306,11 +803,184 @@ The response does not include either Content-Security-Policy with 'frame-ancesto
 
 Content Security Policy (CSP) is an added layer of security that helps to detect and mitigate certain types of attacks, including Cross Site Scripting (XSS) and data injection attacks. These attacks are used for everything from data theft to site defacement or distribution of malware. CSP provides a set of standard HTTP headers that allow website owners to declare approved sources of content that browsers should be allowed to load on that page — covered types are JavaScript, CSS, HTML frames, fonts, images and embeddable objects such as Java applets, ActiveX, audio and video files.
 
+##### Evidence
+
+The following examples were found in the application.
+
+
+**Example 1**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "302",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:55 GMT",
+        "ETag": "W/\"12e-NUd9AXIUhKg/ZrG/vBaRj1swOp4\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 2**
+
+* **Request**
+    * **Target**: `http://localhost:3000/search`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/search"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "256",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:56 GMT",
+        "ETag": "W/\"100-Ez9kQ2LJQmBI+nK7DdgzrICKUBQ\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <form action="/search">
+        <label for="q">Search</label>
+        <input name="q" id="q" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <p>You searched for: undefined</p>
+      </body>
+      </html>
+      
+      ```
+
+**Example 3**
+
+* **Request**
+    * **Target**: `http://localhost:3000/search?q=ZAP`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000/search",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000/search" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/search?q=ZAP"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "250",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:56 GMT",
+        "ETag": "W/\"fa-kPP1kQTdSUEonRkcNJnMUr19j8k\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <form action="/search">
+        <label for="q">Search</label>
+        <input name="q" id="q" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <p>You searched for: ZAP</p>
+      </body>
+      </html>
+      
+      ```
 
 ##### References
 
 [CWE-693](#CWE-693)
-
 
 #### CSP: Wildcard Directive 
 
@@ -318,11 +988,122 @@ Content Security Policy (CSP) is an added layer of security that helps to detect
 
 Content Security Policy (CSP) is an added layer of security that helps to detect and mitigate certain types of attacks. Including (but not limited to) Cross Site Scripting (XSS), and data injection attacks. These attacks are used for everything from data theft to site defacement or distribution of malware. CSP provides a set of standard HTTP headers that allow website owners to declare approved sources of content that browsers should be allowed to load on that page — covered types are JavaScript, CSS, HTML frames, fonts, images and embeddable objects such as Java applets, ActiveX, audio and video files.
 
+##### Evidence
+
+The following examples were found in the application.
+
+
+**Example 1**
+
+* **Request**
+    * **Target**: `http://localhost:3000/robots.txt`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/robots.txt"
+      ```
+* **Response**
+    * **Status Code**: `404`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "149",
+        "Content-Security-Policy": "default-src 'none'",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:56 GMT",
+        "Keep-Alive": "timeout=5",
+        "X-Content-Type-Options": "nosniff",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```json
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+      <meta charset="utf-8">
+      <title>Error</title>
+      </head>
+      <body>
+      <pre>Cannot GET /robots.txt</pre>
+      </body>
+      </html>
+      
+      ```
+
+**Example 2**
+
+* **Request**
+    * **Target**: `http://localhost:3000/sitemap.xml`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/sitemap.xml"
+      ```
+* **Response**
+    * **Status Code**: `404`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "150",
+        "Content-Security-Policy": "default-src 'none'",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:56 GMT",
+        "Keep-Alive": "timeout=5",
+        "X-Content-Type-Options": "nosniff",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```json
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+      <meta charset="utf-8">
+      <title>Error</title>
+      </head>
+      <body>
+      <pre>Cannot GET /sitemap.xml</pre>
+      </body>
+      </html>
+      
+      ```
 
 ##### References
 
 [CWE-693](#CWE-693)
-
 
 #### Absence of Anti-CSRF Tokens 
 
@@ -338,11 +1119,251 @@ CSRF attacks are effective in a number of situations, including:
 
 CSRF has primarily been used to perform an action against a target site using the victim's privileges, but recent techniques have been discovered to disclose information by gaining access to the response. The risk of information disclosure is dramatically increased when the target site is vulnerable to XSS, because XSS can be used as a platform for CSRF, allowing the attack to operate within the bounds of the same-origin policy.
 
+##### Evidence
+
+The following examples were found in the application.
+
+
+**Example 1**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "302",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:55 GMT",
+        "ETag": "W/\"12e-NUd9AXIUhKg/ZrG/vBaRj1swOp4\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 2**
+
+* **Request**
+    * **Target**: `http://localhost:3000/search`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/search"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "256",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:56 GMT",
+        "ETag": "W/\"100-Ez9kQ2LJQmBI+nK7DdgzrICKUBQ\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <form action="/search">
+        <label for="q">Search</label>
+        <input name="q" id="q" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <p>You searched for: undefined</p>
+      </body>
+      </html>
+      
+      ```
+
+**Example 3**
+
+* **Request**
+    * **Target**: `http://localhost:3000/search?q=ZAP`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000/search",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000/search" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/search?q=ZAP"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "250",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:56 GMT",
+        "ETag": "W/\"fa-kPP1kQTdSUEonRkcNJnMUr19j8k\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <form action="/search">
+        <label for="q">Search</label>
+        <input name="q" id="q" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <p>You searched for: ZAP</p>
+      </body>
+      </html>
+      
+      ```
+
+**Example 4**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "9",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=ZAP"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=ZAP' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "315",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:56 GMT",
+        "ETag": "W/\"13b-a8pXFGhzT4FQ2yc6+5Z+5hrwsq0\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
 
 ##### References
 
 [CWE-352](#CWE-352)
-
 
 ### Low Severity
 
@@ -352,11 +1373,184 @@ CSRF has primarily been used to perform an action against a target site using th
 
 The Anti-MIME-Sniffing header X-Content-Type-Options was not set to 'nosniff'. This allows older versions of Internet Explorer and Chrome to perform MIME-sniffing on the response body, potentially causing the response body to be interpreted and displayed as a content type other than the declared content type. Current (early 2014) and legacy versions of Firefox will use the declared content type (if one is set), rather than performing MIME-sniffing.
 
+##### Evidence
+
+The following examples were found in the application.
+
+
+**Example 1**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "302",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:55 GMT",
+        "ETag": "W/\"12e-NUd9AXIUhKg/ZrG/vBaRj1swOp4\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 2**
+
+* **Request**
+    * **Target**: `http://localhost:3000/search`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/search"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "256",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:56 GMT",
+        "ETag": "W/\"100-Ez9kQ2LJQmBI+nK7DdgzrICKUBQ\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <form action="/search">
+        <label for="q">Search</label>
+        <input name="q" id="q" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <p>You searched for: undefined</p>
+      </body>
+      </html>
+      
+      ```
+
+**Example 3**
+
+* **Request**
+    * **Target**: `http://localhost:3000/search?q=ZAP`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000/search",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000/search" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/search?q=ZAP"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "250",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:56 GMT",
+        "ETag": "W/\"fa-kPP1kQTdSUEonRkcNJnMUr19j8k\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <form action="/search">
+        <label for="q">Search</label>
+        <input name="q" id="q" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <p>You searched for: ZAP</p>
+      </body>
+      </html>
+      
+      ```
 
 ##### References
 
 [CWE-693](#CWE-693)
-
 
 #### Server Leaks Information via "X-Powered-By" HTTP Response Header Field(s) 
 
@@ -364,11 +1558,181 @@ The Anti-MIME-Sniffing header X-Content-Type-Options was not set to 'nosniff'. T
 
 The web/application server is leaking information via one or more "X-Powered-By" HTTP response headers. Access to such information may facilitate attackers identifying other frameworks/components your web application is reliant upon and the vulnerabilities such components may be subject to.
 
+##### Evidence
+
+The following examples were found in the application.
+
+
+**Example 1**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "302",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:55 GMT",
+        "ETag": "W/\"12e-NUd9AXIUhKg/ZrG/vBaRj1swOp4\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 2**
+
+* **Request**
+    * **Target**: `http://localhost:3000/search`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/search"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "256",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:56 GMT",
+        "ETag": "W/\"100-Ez9kQ2LJQmBI+nK7DdgzrICKUBQ\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <form action="/search">
+        <label for="q">Search</label>
+        <input name="q" id="q" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <p>You searched for: undefined</p>
+      </body>
+      </html>
+      
+      ```
+
+**Example 3**
+
+* **Request**
+    * **Target**: `http://localhost:3000/sitemap.xml`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+        "http://localhost:3000/sitemap.xml"
+      ```
+* **Response**
+    * **Status Code**: `404`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "150",
+        "Content-Security-Policy": "default-src 'none'",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:57:56 GMT",
+        "Keep-Alive": "timeout=5",
+        "X-Content-Type-Options": "nosniff",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```json
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+      <meta charset="utf-8">
+      <title>Error</title>
+      </head>
+      <body>
+      <pre>Cannot GET /sitemap.xml</pre>
+      </body>
+      </html>
+      
+      ```
 
 ##### References
 
 [CWE-200](#CWE-200)
-
 
 ### Info Severity
 
@@ -378,7 +1742,1405 @@ The web/application server is leaking information via one or more "X-Powered-By"
 
 Check for differences in response based on fuzzed User Agent (eg. mobile sites, access as a Search Engine Crawler). Compares the response statuscode and the hashcode of the response body with the original response.
 
+##### Evidence
 
+The following examples were found in the application.
+
+
+**Example 1**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "394",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"18a-HZTbdtbI9OY+wL8hP8z4SURZxdg\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li><xsl:value-of select="document('http://localhost:22')"/></li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 2**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "381",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"17d-QYebtefhBjWiBOENFDQUzdqjjos\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li><xsl:value-of select="document('http://localhost:22')"/></li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 3**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "368",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"170-lCiktpVT6GX3BbEDA9WAZgxAqxU\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li><xsl:value-of select="document('http://localhost:22')"/></li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 4**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Trident/7.0; rv:11.0) like Gecko"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Trident/7.0; rv:11.0) like Gecko" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "407",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"197-o3KG3C9J1F26pXoqTV/WyIa6DFo\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li><xsl:value-of select="document('http://localhost:22')"/></li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 5**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3739.0 Safari/537.36 Edg/75.0.109.0"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3739.0 Safari/537.36 Edg/75.0.109.0" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "290",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"122-u8C4e41zuW8gNQe38sGtns8AswE\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 6**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "354",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"162-Yv4sJjwnurb5sL1DnLSO7K0AiIk\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 7**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/91.0"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/91.0" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "354",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"162-Yv4sJjwnurb5sL1DnLSO7K0AiIk\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 8**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "290",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"122-u8C4e41zuW8gNQe38sGtns8AswE\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 9**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "315",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"13b-a8pXFGhzT4FQ2yc6+5Z+5hrwsq0\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 10**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 8_0_2 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12A366 Safari/600.1.4"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (iPhone; CPU iPhone OS 8_0_2 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12A366 Safari/600.1.4" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "341",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"155-VEAg96LZnMsmn/o+Y0UA6RLfLm4\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 11**
+
+* **Request**
+    * **Target**: `http://localhost:3000`
+    * **Method**: `GET`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16"
+      }
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X GET \
+        -H "cache-control: no-cache" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "user-agent: Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16" \
+        "http://localhost:3000"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "328",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"148-Ge9JyRfM22q4Gd1Ey7I9Nv95nxY\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 12**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "9",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=ZAP"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=ZAP' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "394",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"18a-HZTbdtbI9OY+wL8hP8z4SURZxdg\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li><xsl:value-of select="document('http://localhost:22')"/></li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 13**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "9",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=ZAP"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=ZAP' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "381",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"17d-QYebtefhBjWiBOENFDQUzdqjjos\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li><xsl:value-of select="document('http://localhost:22')"/></li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 14**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "9",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=ZAP"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=ZAP' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "368",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"170-lCiktpVT6GX3BbEDA9WAZgxAqxU\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li><xsl:value-of select="document('http://localhost:22')"/></li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 15**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "9",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Trident/7.0; rv:11.0) like Gecko"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=ZAP"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=ZAP' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Trident/7.0; rv:11.0) like Gecko" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "407",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"197-o3KG3C9J1F26pXoqTV/WyIa6DFo\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li><xsl:value-of select="document('http://localhost:22')"/></li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 16**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "9",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3739.0 Safari/537.36 Edg/75.0.109.0"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=ZAP"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=ZAP' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3739.0 Safari/537.36 Edg/75.0.109.0" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "420",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"1a4-3xnIp+XzVly+cE7vWk1MaN7Nez4\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li><xsl:value-of select="document('http://localhost:22')"/></li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 17**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "9",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=ZAP"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=ZAP' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "302",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"12e-NUd9AXIUhKg/ZrG/vBaRj1swOp4\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 18**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "9",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/91.0"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=ZAP"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=ZAP' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/91.0" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "367",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"16f-AZAC/C5KtLWe6ZFNcLjlpVZDuc0\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 19**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "9",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=ZAP"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=ZAP' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "302",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"12e-NUd9AXIUhKg/ZrG/vBaRj1swOp4\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 20**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "9",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=ZAP"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=ZAP' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "328",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"148-Ge9JyRfM22q4Gd1Ey7I9Nv95nxY\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 21**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "9",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 8_0_2 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12A366 Safari/600.1.4"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=ZAP"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=ZAP' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (iPhone; CPU iPhone OS 8_0_2 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12A366 Safari/600.1.4" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "354",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"162-Yv4sJjwnurb5sL1DnLSO7K0AiIk\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
+
+**Example 22**
+
+* **Request**
+    * **Target**: `http://localhost:3000/`
+    * **Method**: `POST`
+    * **Headers**:
+      ```json
+      {
+        "cache-control": "no-cache",
+        "content-length": "9",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "localhost:3000",
+        "pragma": "no-cache",
+        "referer": "http://localhost:3000",
+        "user-agent": "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16"
+      }
+      ```
+    * **Body**:
+      ```json
+      "words=ZAP"
+      ```
+    * **Curl**:
+      ```shell
+      curl -o - -i \
+        -X POST \
+        --data 'words=ZAP' \
+        -H "cache-control: no-cache" \
+        -H "content-type: application/x-www-form-urlencoded" \
+        -H "host: localhost:3000" \
+        -H "pragma: no-cache" \
+        -H "referer: http://localhost:3000" \
+        -H "user-agent: Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16" \
+        "http://localhost:3000/"
+      ```
+* **Response**
+    * **Status Code**: `200`
+    * **Headers**:
+      ```json
+      {
+        "Connection": "keep-alive",
+        "Content-Length": "341",
+        "Content-Type": "text/html; charset=utf-8",
+        "Date": "Sun, 23 Jul 2023 10:58:09 GMT",
+        "ETag": "W/\"155-VEAg96LZnMsmn/o+Y0UA6RLfLm4\"",
+        "Keep-Alive": "timeout=5",
+        "X-Powered-By": "Express"
+      }
+      ```
+    * **Body**:
+      ```html
+      <!doctype html>
+      <html lang="en">
+      <body>
+      <a href="/search">Search</a>
+      <form method="post" action="/">
+        <label for="words">Enter some words</label>
+        <input name="words" id="words" />
+        <button type="submit">Submit</button>
+      </form>
+      91982f77522dbe8334d889f270952f96
+      <ul><li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li>
+      <li>ZAP</li></ul>
+      </body>
+      </html>
+      
+      ```
 
 ### Unknown Severity
 
@@ -388,7 +3150,7 @@ Check for differences in response based on fuzzed User Agent (eg. mobile sites, 
 
 The code probably contains a weak crypto algorithm (md5, sha1...)
 
-##### Instances
+##### Evidence
 
 The following examples were found in the application.
 
@@ -408,23 +3170,23 @@ The following examples were found in the application.
 
 Untrusted User Input in Response will result in Reflected Cross Site Scripting Vulnerability.
 
-##### Instances
+##### Evidence
 
 The following examples were found in the application.
 
-`app.js` (starting on line: 84)
+`app.js` (starting on line: 90)
 ```javascript
-82| 
-83| app.all('/search', (req, res) => {
-84|   res.send(`${searchPage}<p>You searched for: ${req.query['q']}</p>`);
-85| });
-86| 
+88| 
+89| app.all('/search', (req, res) => {
+90|   res.send(`${searchPage.replace('%%SEARCH%%', `<p>You searched for: ${req.query['q']}</p>`)}`);
+91| });
+92| 
 ```
+
 
 ##### References
 
 [CWE-79](#CWE-79)
-
 
 #### Use of a Broken or Risky Cryptographic Algorithm 
 
@@ -432,7 +3194,7 @@ The following examples were found in the application.
 
 MD5 is a a weak hash which is known to have collision. Use a strong hashing function.
 
-##### Instances
+##### Evidence
 
 The following examples were found in the application.
 
@@ -445,10 +3207,10 @@ The following examples were found in the application.
 15| const port = process.env["PORT"] || 3000;
 ```
 
+
 ##### References
 
 [CWE-327](#CWE-327)
-
 
 
 
