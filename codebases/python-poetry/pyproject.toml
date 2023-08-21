@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "python-poetry"
+version = "0.1.0"
+description = "Example vulnerable python application managed by poetry"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+CairoSVG = "2.6.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
